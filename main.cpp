@@ -60,15 +60,14 @@ int main() {
     for (DWORD i = 0; i < msk_count; i++) {
         auto msk_name_res = reg::reg_enum_subkey_names(mk, i);
         if (!msk_name_res.has_value()) {
-            std::println(stderr,
-                         "  [{}] Error when enumerating over media keys", i);
+            reg::print_error(msk_name_res.error());
             continue;
         }
         std::string msk_name = msk_name_res.value();
 
         auto msk_res = reg::reg_open_key(mk, msk_name);
         if (!msk_res.has_value()) {
-            std::println(stderr, "Could not open media instance key");
+            reg::print_error(msk_res.error());
             continue;
         }
         HKEY msk = msk_res.value();
@@ -89,7 +88,8 @@ int main() {
             psk,
             std::vector<std::string>(std::begin(ps_names), std::end(ps_names)));
         if (!ps_values_res.has_value()) {
-            break;
+            reg::print_error(ps_values_res.error());
+            continue;
         }
         std::vector<DWORD> ps_values = ps_values_res.value();
 
@@ -103,7 +103,8 @@ int main() {
             msk,
             std::vector<std::string>(std::begin(mi_names), std::end(mi_names)));
         if (!mi_values_res.has_value()) {
-            break;
+            reg::print_error(mi_values_res.error());
+            continue;
         }
         std::vector<std::string> mi_values = mi_values_res.value();
 
