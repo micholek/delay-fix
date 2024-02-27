@@ -29,4 +29,6 @@ RegRes<std::string> reg_get_string(HKEY key, std::string value_name);
 RegRes<std::vector<std::string>>
 reg_get_strings(HKEY key, const std::vector<std::string> &value_names);
 
+void print_error(ErrorMessage msg);
+
 } // namespace reg

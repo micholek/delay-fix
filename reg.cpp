@@ -1,5 +1,6 @@
 #include "reg.h"
 #include <format>
+#include <print>
 
 namespace {
 
@@ -86,6 +87,10 @@ reg_get_strings(HKEY key, const std::vector<std::string> &value_names) {
         values[i] = value_res.value();
     }
     return values;
+}
+
+void print_error(ErrorMessage msg) {
+    std::println(stderr, "{}\n", msg.value);
 }
 
 } // namespace reg

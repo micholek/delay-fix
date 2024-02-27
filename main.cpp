@@ -36,26 +36,20 @@ std::string get_key_path(std::string parent, std::string key) {
            key;
 }
 
-template <typename... Args>
-inline void print_error(const std::format_string<Args...> fmt, Args &&...args) {
-    std::println(stderr, fmt, args...);
-}
-
 int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
     auto mk_res = reg::reg_open_key(HKEY_LOCAL_MACHINE, media_path);
     if (!mk_res.has_value()) {
-        print_error("Could not open media key");
+        reg::print_error(mk_res.error());
         return -1;
     }
     HKEY mk = mk_res.value();
 
     auto msk_count_res = reg::reg_get_subkeys_count(mk);
     if (!msk_count_res.has_value()) {
-        print_error("Could not count media subkeys: {}",
-                    msk_count_res.error().value);
+        reg::print_error(msk_count_res.error());
         return -1;
     }
     DWORD msk_count = msk_count_res.value();
@@ -81,8 +75,7 @@ int main() {
 
         auto psk_res = reg::reg_open_key(msk, "PowerSettings");
         if (!psk_res.has_value()) {
-            print_error("Could not open PowerSettings key: {}",
-                        psk_res.error().value);
+            reg::print_error(psk_res.error());
             continue;
         }
         HKEY psk = psk_res.value();
