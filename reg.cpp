@@ -3,15 +3,15 @@
 
 namespace {
 
-reg::ErrorMessage get_error_message(LSTATUS error_status) {
+::reg::ErrorMessage get_error_message(LSTATUS error_status) {
     char msg_buf[128];
     if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, 0, error_status, 0, msg_buf,
                         sizeof(msg_buf), 0)) {
-        return std::vformat("[{}] Some error occured",
-                            std::make_format_args(error_status));
+        return ::reg::ErrorMessage {std::vformat(
+            "[{}] Some error occured", std::make_format_args(error_status))};
     }
-    return std::vformat("[{}] {}",
-                        std::make_format_args(error_status, msg_buf));
+    return ::reg::ErrorMessage {
+        std::vformat("[{}] {}", std::make_format_args(error_status, msg_buf))};
 }
 
 } // namespace

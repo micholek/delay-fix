@@ -54,7 +54,8 @@ int main() {
 
     auto msk_count_res = reg::reg_get_subkeys_count(mk);
     if (!msk_count_res.has_value()) {
-        print_error("Could not count media subkeys: {}", msk_count_res.error());
+        print_error("Could not count media subkeys: {}",
+                    msk_count_res.error().value);
         return -1;
     }
     DWORD msk_count = msk_count_res.value();
@@ -81,7 +82,7 @@ int main() {
         auto psk_res = reg::reg_open_key(msk, "PowerSettings");
         if (!psk_res.has_value()) {
             print_error("Could not open PowerSettings key: {}",
-                        psk_res.error());
+                        psk_res.error().value);
             continue;
         }
         HKEY psk = psk_res.value();

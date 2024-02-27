@@ -7,7 +7,10 @@
 
 namespace reg {
 
-typedef std::string ErrorMessage;
+struct ErrorMessage {
+    std::string value;
+};
+
 template <class T> using RegRes = std::expected<T, ErrorMessage>;
 
 RegRes<HKEY> reg_open_key(HKEY key, std::string subkey_name);
