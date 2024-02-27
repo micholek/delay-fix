@@ -82,7 +82,7 @@ int main() {
         if (!psk_res.has_value()) {
             print_error("Could not open PowerSettings key: {}",
                         psk_res.error());
-            break;
+            continue;
         }
         HKEY psk = psk_res.value();
 
