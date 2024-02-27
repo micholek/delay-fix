@@ -3,7 +3,7 @@
 
 namespace {
 
-ErrorMessage get_error_message(LSTATUS error_status) {
+reg::ErrorMessage get_error_message(LSTATUS error_status) {
     char msg_buf[128];
     if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, 0, error_status, 0, msg_buf,
                         sizeof(msg_buf), 0)) {
@@ -23,6 +23,8 @@ ErrorMessage get_error_message(LSTATUS error_status) {
         }                                                        \
         return (Expected_Value);                                 \
     } while (0)
+
+namespace reg {
 
 RegRes<HKEY> reg_open_key(HKEY key, std::string subkey_name) {
     HKEY opened_key;
@@ -86,3 +88,5 @@ reg_get_strings(HKEY key, const std::vector<std::string> &value_names) {
     }
     return values;
 }
+
+} // namespace reg

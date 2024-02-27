@@ -5,6 +5,8 @@
 #include <vector>
 #include <windows.h>
 
+namespace reg {
+
 typedef std::string ErrorMessage;
 template <class T> using RegRes = std::expected<T, ErrorMessage>;
 
@@ -23,3 +25,5 @@ RegRes<std::string> reg_get_string(HKEY key, std::string value_name);
 
 RegRes<std::vector<std::string>>
 reg_get_strings(HKEY key, const std::vector<std::string> &value_names);
+
+} // namespace reg
