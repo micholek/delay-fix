@@ -14,21 +14,38 @@ struct Error {
 
 template <class T> using Result = std::expected<T, Error>;
 
-Result<HKEY> reg_open_key(HKEY key, std::string subkey_name);
+class Key {
+    HKEY k_;
 
-Result<DWORD> reg_get_subkeys_count(HKEY key);
+  public:
+    // TODO: create global predefined objects in reg namespace instead (how?)
+    // TODO: create methods for the rest of predefined keys
+    static Key &LOCAL_MACHINE() {
+        static Key key(HKEY_LOCAL_MACHINE);
+        return key;
+    }
 
-Result<std::string> reg_enum_subkey_names(HKEY key, DWORD idx);
+    // TODO: implement special methods
+    // ~Key();
+    // Key(const Key &);
+    // Key &operator=(const Key &);
+    // Key(Key &&) = delete;
+    // Key &operator=(Key &&);
 
-Result<DWORD> reg_get_dword(HKEY key, std::string value_name);
+    Result<Key> open_key(std::string key_name) const;
+    Result<DWORD> get_subkeys_count() const;
+    Result<std::string> enum_subkey_names(DWORD idx) const;
+    Result<DWORD> get_dword(std::string value_name) const;
+    Result<std::vector<DWORD>>
+    get_dwords(const std::vector<std::string> &value_names) const;
+    Result<std::string> get_string(std::string value_name) const;
+    Result<std::vector<std::string>>
+    get_strings(const std::vector<std::string> &value_names) const;
 
-Result<std::vector<DWORD>>
-reg_get_dwords(HKEY key, const std::vector<std::string> &value_names);
-
-Result<std::string> reg_get_string(HKEY key, std::string value_name);
-
-Result<std::vector<std::string>>
-reg_get_strings(HKEY key, const std::vector<std::string> &value_names);
+  private:
+    // Keys have to be created with Key::open_key
+    explicit Key(HKEY k) : k_ {k} {};
+};
 
 void print_error(Error err);
 

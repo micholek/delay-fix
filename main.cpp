@@ -40,14 +40,14 @@ int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
-    auto mk_res = reg::reg_open_key(HKEY_LOCAL_MACHINE, media_path);
+    auto mk_res = reg::Key::LOCAL_MACHINE().open_key(media_path);
     if (!mk_res.has_value()) {
         reg::print_error(mk_res.error());
         return -1;
     }
-    HKEY mk = mk_res.value();
+    reg::Key mk = mk_res.value();
 
-    auto msk_count_res = reg::reg_get_subkeys_count(mk);
+    auto msk_count_res = mk.get_subkeys_count();
     if (!msk_count_res.has_value()) {
         reg::print_error(msk_count_res.error());
         return -1;
@@ -58,34 +58,33 @@ int main() {
     media_infos.reserve(msk_count);
 
     for (DWORD i = 0; i < msk_count; i++) {
-        auto msk_name_res = reg::reg_enum_subkey_names(mk, i);
+        auto msk_name_res = mk.enum_subkey_names(i);
         if (!msk_name_res.has_value()) {
             reg::print_error(msk_name_res.error());
             continue;
         }
         std::string msk_name = msk_name_res.value();
 
-        auto msk_res = reg::reg_open_key(mk, msk_name);
+        auto msk_res = mk.open_key(msk_name);
         if (!msk_res.has_value()) {
             reg::print_error(msk_res.error());
             continue;
         }
-        HKEY msk = msk_res.value();
+        reg::Key msk = msk_res.value();
 
-        auto psk_res = reg::reg_open_key(msk, "PowerSettings");
+        auto psk_res = msk.open_key("PowerSettings");
         if (!psk_res.has_value()) {
             reg::print_error(psk_res.error());
             continue;
         }
-        HKEY psk = psk_res.value();
+        reg::Key psk = psk_res.value();
 
         const std::array<std::string, _POWER_SETTINGS_VAL_COUNT> ps_names = {
             "ConservationIdleTime",
             "PerformanceIdleTime",
             "IdlePowerState",
         };
-        auto ps_values_res = reg::reg_get_dwords(
-            psk,
+        auto ps_values_res = psk.get_dwords(
             std::vector<std::string>(std::begin(ps_names), std::end(ps_names)));
         if (!ps_values_res.has_value()) {
             reg::print_error(ps_values_res.error());
@@ -99,8 +98,7 @@ int main() {
             "DriverDate",
             "ProviderName",
         };
-        auto mi_values_res = reg::reg_get_strings(
-            msk,
+        auto mi_values_res = msk.get_strings(
             std::vector<std::string>(std::begin(mi_names), std::end(mi_names)));
         if (!mi_values_res.has_value()) {
             reg::print_error(mi_values_res.error());

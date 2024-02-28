@@ -23,42 +23,42 @@ std::string create_msg(std::string desc, std::string param) {
 
 namespace reg {
 
-Result<HKEY> reg_open_key(HKEY key, std::string subkey_name) {
+Result<Key> Key::open_key(std::string key_name) const {
     HKEY opened_key;
-    LSTATUS res = RegOpenKeyExA(key, subkey_name.c_str(), 0,
-                                KEY_READ | KEY_WRITE, &opened_key);
-    RETURN(res, opened_key, create_msg("Failed to open a key", subkey_name));
+    LSTATUS res = RegOpenKeyExA(k_, key_name.c_str(), 0, KEY_READ | KEY_WRITE,
+                                &opened_key);
+    RETURN(res, Key(opened_key), create_msg("Failed to open a key", key_name));
 }
 
-Result<DWORD> reg_get_subkeys_count(HKEY key) {
+Result<DWORD> Key::get_subkeys_count() const {
     DWORD subkeys_count;
     LSTATUS res =
-        RegQueryInfoKeyA(key, 0, 0, 0, &subkeys_count, 0, 0, 0, 0, 0, 0, 0);
+        RegQueryInfoKeyA(k_, 0, 0, 0, &subkeys_count, 0, 0, 0, 0, 0, 0, 0);
     RETURN(res, subkeys_count, "Failed to get subkeys count");
 }
 
-Result<std::string> reg_enum_subkey_names(HKEY key, DWORD index) {
+Result<std::string> Key::enum_subkey_names(DWORD index) const {
     char subkey_name[64];
     DWORD size = sizeof(subkey_name);
-    LSTATUS res = RegEnumKeyExA(key, index, subkey_name, &size, 0, 0, 0, 0);
+    LSTATUS res = RegEnumKeyExA(k_, index, subkey_name, &size, 0, 0, 0, 0);
     RETURN(res, std::string {subkey_name},
            create_msg("Failed to get subkey name with index",
                       std::to_string(index)));
 }
 
-Result<DWORD> reg_get_dword(HKEY key, std::string value_name) {
+Result<DWORD> Key::get_dword(std::string value_name) const {
     DWORD value;
     DWORD size = sizeof(value);
-    LSTATUS res = RegGetValueA(key, 0, value_name.c_str(), RRF_RT_DWORD, 0,
-                               &value, &size);
+    LSTATUS res =
+        RegGetValueA(k_, 0, value_name.c_str(), RRF_RT_DWORD, 0, &value, &size);
     RETURN(res, value, create_msg("Failed to get DWORD value", value_name));
 }
 
 Result<std::vector<DWORD>>
-reg_get_dwords(HKEY key, const std::vector<std::string> &value_names) {
+Key::get_dwords(const std::vector<std::string> &value_names) const {
     std::vector<DWORD> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
-        auto value_res = reg_get_dword(key, value_names[i]);
+        auto value_res = get_dword(value_names[i]);
         if (!value_res.has_value()) {
             Error err = value_res.error();
             return std::unexpected(Error {
@@ -72,20 +72,20 @@ reg_get_dwords(HKEY key, const std::vector<std::string> &value_names) {
     return values;
 }
 
-Result<std::string> reg_get_string(HKEY key, std::string value_name) {
+Result<std::string> Key::get_string(std::string value_name) const {
     char value[64];
     DWORD size = sizeof(value);
-    LSTATUS res = RegGetValueA(key, 0, value_name.c_str(), RRF_RT_REG_SZ, 0,
-                               value, &size);
+    LSTATUS res =
+        RegGetValueA(k_, 0, value_name.c_str(), RRF_RT_REG_SZ, 0, value, &size);
     RETURN(res, std::string {value},
            create_msg("Failed to get string value", value_name));
 }
 
 Result<std::vector<std::string>>
-reg_get_strings(HKEY key, const std::vector<std::string> &value_names) {
+Key::get_strings(const std::vector<std::string> &value_names) const {
     std::vector<std::string> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
-        auto value_res = reg_get_string(key, value_names[i]);
+        auto value_res = get_string(value_names[i]);
         if (!value_res.has_value()) {
             Error err = value_res.error();
             return std::unexpected(Error {
