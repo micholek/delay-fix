@@ -17,15 +17,13 @@ enum class SystemKey { LocalMachine };
 
 class Key {
   public:
-    bool is_valid() const;
-    Error get_error() const;
-
     // Creates and opens a new subkey of a system key
     Key(SystemKey sk, std::string subkey_name);
 
     // Creates and opens a new subkey of another key
     Key(const Key &k, std::string subkey_name);
 
+    // Destroys and closes the key
     ~Key();
 
     // TODO: implement special methods
@@ -43,6 +41,8 @@ class Key {
     Result<std::vector<std::string>>
     get_strings(const std::vector<std::string> &value_names) const;
 
+    bool is_valid() const;
+    Error get_error() const;
     std::string get_path() const;
 
   private:
