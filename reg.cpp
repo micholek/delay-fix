@@ -1,6 +1,7 @@
 #include "reg.h"
 #include <format>
 #include <print>
+#include <windows.h>
 
 namespace {
 
@@ -32,13 +33,13 @@ constexpr HKEY system_key_to_hkey(reg::SystemKey sk) {
 namespace reg {
 
 Key::Key(SystemKey sk, std::string subkey_name)
-    : Key(system_key_to_hkey(sk), subkey_name) {}
+    : Key((uintptr_t *) system_key_to_hkey(sk), subkey_name) {}
 
 Key::Key(const Key &k, std::string subkey_name) : Key(k.k_, subkey_name) {}
 
-Key::Key(HKEY k, std::string subkey_name) {
-    LSTATUS res =
-        RegOpenKeyExA(k, subkey_name.c_str(), 0, KEY_READ | KEY_WRITE, &k_);
+Key::Key(uintptr_t *k, std::string subkey_name) {
+    LSTATUS res = RegOpenKeyExA((HKEY) k, subkey_name.c_str(), 0,
+                                KEY_READ | KEY_WRITE, (HKEY *) &k_);
     update_error_(res, create_msg("Could not open a key", subkey_name));
 }
 
@@ -52,7 +53,7 @@ Error Key::get_error() const {
 
 Key::~Key() {
     if (k_ != nullptr) {
-        LSTATUS res = RegCloseKey(k_);
+        LSTATUS res = RegCloseKey((HKEY) k_);
         update_error_(res, "Could not close the key");
         k_ = nullptr;
     }
@@ -60,15 +61,16 @@ Key::~Key() {
 
 Result<uint32_t> Key::get_subkeys_count() const {
     DWORD subkeys_count;
-    LSTATUS res =
-        RegQueryInfoKeyA(k_, 0, 0, 0, &subkeys_count, 0, 0, 0, 0, 0, 0, 0);
+    LSTATUS res = RegQueryInfoKeyA((HKEY) k_, 0, 0, 0, &subkeys_count, 0, 0, 0,
+                                   0, 0, 0, 0);
     RETURN(res, subkeys_count, "Failed to get subkeys count");
 }
 
 Result<std::string> Key::enum_subkey_names(uint32_t index) const {
     char subkey_name[64];
     DWORD size = sizeof(subkey_name);
-    LSTATUS res = RegEnumKeyExA(k_, index, subkey_name, &size, 0, 0, 0, 0);
+    LSTATUS res =
+        RegEnumKeyExA((HKEY) k_, index, subkey_name, &size, 0, 0, 0, 0);
     RETURN(res, std::string {subkey_name},
            create_msg("Failed to get subkey name with index",
                       std::to_string(index)));
@@ -77,8 +79,8 @@ Result<std::string> Key::enum_subkey_names(uint32_t index) const {
 Result<uint32_t> Key::get_u32(std::string value_name) const {
     uint32_t value;
     DWORD size = sizeof(value);
-    LSTATUS res =
-        RegGetValueA(k_, 0, value_name.c_str(), RRF_RT_DWORD, 0, &value, &size);
+    LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_DWORD,
+                               0, &value, &size);
     RETURN(res, value, create_msg("Failed to get u32 value", value_name));
 }
 
@@ -103,8 +105,8 @@ Key::get_u32s(const std::vector<std::string> &value_names) const {
 Result<std::string> Key::get_string(std::string value_name) const {
     char value[64];
     DWORD size = sizeof(value);
-    LSTATUS res =
-        RegGetValueA(k_, 0, value_name.c_str(), RRF_RT_REG_SZ, 0, value, &size);
+    LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_REG_SZ,
+                               0, value, &size);
     RETURN(res, std::string {value},
            create_msg("Failed to get string value", value_name));
 }
@@ -127,7 +129,7 @@ Key::get_strings(const std::vector<std::string> &value_names) const {
     return values;
 }
 
-void Key::update_error_(LSTATUS res, std::string err_msg) {
+void Key::update_error_(int32_t res, std::string err_msg) {
     err_ = {
         .code = res,
         .msg = (res != ERROR_SUCCESS) ? err_msg : "",

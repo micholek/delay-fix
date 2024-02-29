@@ -3,12 +3,11 @@
 #include <expected>
 #include <string>
 #include <vector>
-#include <windows.h>
 
 namespace reg {
 
 struct Error {
-    LSTATUS code;
+    int32_t code;
     std::string msg;
 };
 
@@ -45,11 +44,11 @@ class Key {
     get_strings(const std::vector<std::string> &value_names) const;
 
   private:
-    HKEY k_ {nullptr};
+    uintptr_t *k_ {nullptr};
     Error err_;
 
-    Key(HKEY k, std::string subkey_name);
-    void update_error_(LSTATUS res, std::string msg);
+    Key(uintptr_t *k, std::string subkey_name);
+    void update_error_(int32_t res, std::string msg);
 };
 
 void print_error(Error err);
