@@ -9,6 +9,18 @@ std::string create_msg(std::string desc, std::string param) {
     return std::format("{} '{}'", desc, param);
 }
 
+constexpr std::string system_key_to_path(reg::SystemKey sk) {
+    switch (sk) {
+    case reg::SystemKey::LocalMachine:
+        return "HKEY_LOCAL_MACHINE";
+    }
+    return "HKEY_LOCAL_MACHINE"; // fallback for now
+}
+
+std::string create_path(std::string parent_path, std::string subkey_name) {
+    return std::format("{}\\{}", parent_path, subkey_name);
+}
+
 constexpr HKEY system_key_to_hkey(reg::SystemKey sk) {
     switch (sk) {
     case reg::SystemKey::LocalMachine:
@@ -33,14 +45,17 @@ constexpr HKEY system_key_to_hkey(reg::SystemKey sk) {
 namespace reg {
 
 Key::Key(SystemKey sk, std::string subkey_name)
-    : Key((uintptr_t *) system_key_to_hkey(sk), subkey_name) {}
+    : Key((uintptr_t *) system_key_to_hkey(sk), subkey_name,
+          system_key_to_path(sk)) {}
 
-Key::Key(const Key &k, std::string subkey_name) : Key(k.k_, subkey_name) {}
+Key::Key(const Key &k, std::string subkey_name)
+    : Key(k.k_, subkey_name, k.path_) {}
 
-Key::Key(uintptr_t *k, std::string subkey_name) {
+Key::Key(uintptr_t *k, std::string subkey_name, std::string parent_path) {
     LSTATUS res = RegOpenKeyExA((HKEY) k, subkey_name.c_str(), 0,
                                 KEY_READ | KEY_WRITE, (HKEY *) &k_);
     update_error_(res, create_msg("Could not open a key", subkey_name));
+    path_ = create_path(parent_path, subkey_name);
 }
 
 bool Key::is_valid() const {
@@ -127,6 +142,10 @@ Key::get_strings(const std::vector<std::string> &value_names) const {
         values[i] = value_res.value();
     }
     return values;
+}
+
+std::string Key::get_path() const {
+    return path_;
 }
 
 void Key::update_error_(int32_t res, std::string err_msg) {

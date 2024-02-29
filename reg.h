@@ -43,11 +43,14 @@ class Key {
     Result<std::vector<std::string>>
     get_strings(const std::vector<std::string> &value_names) const;
 
+    std::string get_path() const;
+
   private:
     uintptr_t *k_ {nullptr};
     Error err_;
+    std::string path_;
 
-    Key(uintptr_t *k, std::string subkey_name);
+    Key(uintptr_t *k, std::string subkey_name, std::string parent_path);
     void update_error_(int32_t res, std::string msg);
 };
 

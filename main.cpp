@@ -29,13 +29,6 @@ struct MediaInfo {
     uint32_t idle_power_state;
 };
 
-std::string get_key_path(std::string parent, std::string key) {
-    return std::string {
-               "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\"
-               "{4d36e96c-e325-11ce-bfc1-08002be10318}\\"} +
-           key;
-}
-
 int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
@@ -104,7 +97,7 @@ int main() {
         std::vector<std::string> mi_values = mi_values_res.value();
 
         MediaInfo mi = {
-            .reg_key_path = get_key_path(media_path, msk_name),
+            .reg_key_path = msk.get_path(),
             .driver_desc = mi_values[MEDIA_INST_VAL_DRIVER_DESC],
             .driver_version = mi_values[MEDIA_INST_VAL_DRIVER_VERSION],
             .driver_data = mi_values[MEDIA_INST_VAL_DRIVER_DATA],
