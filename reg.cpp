@@ -8,6 +8,14 @@ std::string create_msg(std::string desc, std::string param) {
     return std::format("{} '{}'", desc, param);
 }
 
+constexpr HKEY system_key_to_hkey(reg::SystemKey sk) {
+    switch (sk) {
+    case reg::SystemKey::LocalMachine:
+        return HKEY_LOCAL_MACHINE;
+    }
+    return HKEY_LOCAL_MACHINE; // fallback for now
+}
+
 } // namespace
 
 #define RETURN(Winapi_Result, Expected_Value, Error_Message) \
@@ -23,11 +31,31 @@ std::string create_msg(std::string desc, std::string param) {
 
 namespace reg {
 
-Result<Key> Key::open_key(std::string key_name) const {
-    HKEY opened_key;
-    LSTATUS res = RegOpenKeyExA(k_, key_name.c_str(), 0, KEY_READ | KEY_WRITE,
-                                &opened_key);
-    RETURN(res, Key(opened_key), create_msg("Failed to open a key", key_name));
+Key::Key(SystemKey sk, std::string subkey_name)
+    : Key(system_key_to_hkey(sk), subkey_name) {}
+
+Key::Key(const Key &k, std::string subkey_name) : Key(k.k_, subkey_name) {}
+
+Key::Key(HKEY k, std::string subkey_name) {
+    LSTATUS res =
+        RegOpenKeyExA(k, subkey_name.c_str(), 0, KEY_READ | KEY_WRITE, &k_);
+    update_error_(res, create_msg("Could not open a key", subkey_name));
+}
+
+bool Key::is_valid() const {
+    return k_ != nullptr;
+}
+
+Error Key::get_error() const {
+    return err_;
+}
+
+Key::~Key() {
+    if (k_ != nullptr) {
+        LSTATUS res = RegCloseKey(k_);
+        update_error_(res, "Could not close the key");
+        k_ = nullptr;
+    }
 }
 
 Result<uint32_t> Key::get_subkeys_count() const {
@@ -97,6 +125,13 @@ Key::get_strings(const std::vector<std::string> &value_names) const {
         values[i] = value_res.value();
     }
     return values;
+}
+
+void Key::update_error_(LSTATUS res, std::string err_msg) {
+    err_ = {
+        .code = res,
+        .msg = (res != ERROR_SUCCESS) ? err_msg : "",
+    };
 }
 
 void print_error(Error err) {

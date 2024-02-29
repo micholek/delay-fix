@@ -14,25 +14,27 @@ struct Error {
 
 template <class T> using Result = std::expected<T, Error>;
 
-class Key {
-    HKEY k_;
+enum class SystemKey { LocalMachine };
 
+class Key {
   public:
-    // TODO: create global predefined objects in reg namespace instead (how?)
-    // TODO: create methods for the rest of predefined keys
-    static Key &LOCAL_MACHINE() {
-        static Key key(HKEY_LOCAL_MACHINE);
-        return key;
-    }
+    bool is_valid() const;
+    Error get_error() const;
+
+    // Creates and opens a new subkey of a system key
+    Key(SystemKey sk, std::string subkey_name);
+
+    // Creates and opens a new subkey of another key
+    Key(const Key &k, std::string subkey_name);
+
+    ~Key();
 
     // TODO: implement special methods
-    // ~Key();
     // Key(const Key &);
     // Key &operator=(const Key &);
     // Key(Key &&) = delete;
     // Key &operator=(Key &&);
 
-    Result<Key> open_key(std::string key_name) const;
     Result<uint32_t> get_subkeys_count() const;
     Result<std::string> enum_subkey_names(uint32_t idx) const;
     Result<uint32_t> get_u32(std::string value_name) const;
@@ -43,8 +45,11 @@ class Key {
     get_strings(const std::vector<std::string> &value_names) const;
 
   private:
-    // Keys have to be created with Key::open_key
-    explicit Key(HKEY k) : k_ {k} {};
+    HKEY k_ {nullptr};
+    Error err_;
+
+    Key(HKEY k, std::string subkey_name);
+    void update_error_(LSTATUS res, std::string msg);
 };
 
 void print_error(Error err);

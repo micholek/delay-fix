@@ -40,12 +40,11 @@ int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
-    auto mk_res = reg::Key::LOCAL_MACHINE().open_key(media_path);
-    if (!mk_res.has_value()) {
-        reg::print_error(mk_res.error());
+    reg::Key mk(reg::SystemKey::LocalMachine, media_path);
+    if (!mk.is_valid()) {
+        reg::print_error(mk.get_error());
         return -1;
     }
-    reg::Key mk = mk_res.value();
 
     auto msk_count_res = mk.get_subkeys_count();
     if (!msk_count_res.has_value()) {
@@ -65,19 +64,17 @@ int main() {
         }
         std::string msk_name = msk_name_res.value();
 
-        auto msk_res = mk.open_key(msk_name);
-        if (!msk_res.has_value()) {
-            reg::print_error(msk_res.error());
+        reg::Key msk(mk, msk_name);
+        if (!msk.is_valid()) {
+            reg::print_error(msk.get_error());
             continue;
         }
-        reg::Key msk = msk_res.value();
 
-        auto psk_res = msk.open_key("PowerSettings");
-        if (!psk_res.has_value()) {
-            reg::print_error(psk_res.error());
+        reg::Key psk(msk, "PowerSettings");
+        if (!psk.is_valid()) {
+            reg::print_error(psk.get_error());
             continue;
         }
-        reg::Key psk = psk_res.value();
 
         const std::array<std::string, _POWER_SETTINGS_VAL_COUNT> ps_names = {
             "ConservationIdleTime",
