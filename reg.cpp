@@ -30,14 +30,14 @@ Result<Key> Key::open_key(std::string key_name) const {
     RETURN(res, Key(opened_key), create_msg("Failed to open a key", key_name));
 }
 
-Result<DWORD> Key::get_subkeys_count() const {
+Result<uint32_t> Key::get_subkeys_count() const {
     DWORD subkeys_count;
     LSTATUS res =
         RegQueryInfoKeyA(k_, 0, 0, 0, &subkeys_count, 0, 0, 0, 0, 0, 0, 0);
     RETURN(res, subkeys_count, "Failed to get subkeys count");
 }
 
-Result<std::string> Key::enum_subkey_names(DWORD index) const {
+Result<std::string> Key::enum_subkey_names(uint32_t index) const {
     char subkey_name[64];
     DWORD size = sizeof(subkey_name);
     LSTATUS res = RegEnumKeyExA(k_, index, subkey_name, &size, 0, 0, 0, 0);
@@ -46,24 +46,24 @@ Result<std::string> Key::enum_subkey_names(DWORD index) const {
                       std::to_string(index)));
 }
 
-Result<DWORD> Key::get_dword(std::string value_name) const {
-    DWORD value;
+Result<uint32_t> Key::get_u32(std::string value_name) const {
+    uint32_t value;
     DWORD size = sizeof(value);
     LSTATUS res =
         RegGetValueA(k_, 0, value_name.c_str(), RRF_RT_DWORD, 0, &value, &size);
-    RETURN(res, value, create_msg("Failed to get DWORD value", value_name));
+    RETURN(res, value, create_msg("Failed to get u32 value", value_name));
 }
 
-Result<std::vector<DWORD>>
-Key::get_dwords(const std::vector<std::string> &value_names) const {
-    std::vector<DWORD> values(value_names.size());
+Result<std::vector<uint32_t>>
+Key::get_u32s(const std::vector<std::string> &value_names) const {
+    std::vector<uint32_t> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
-        auto value_res = get_dword(value_names[i]);
+        auto value_res = get_u32(value_names[i]);
         if (!value_res.has_value()) {
             Error err = value_res.error();
             return std::unexpected(Error {
                 .code = err.code,
-                .msg = std::string {"Failed to get multiple DWORD values: "} +
+                .msg = std::string {"Failed to get multiple u32 values: "} +
                        err.msg,
             });
         }

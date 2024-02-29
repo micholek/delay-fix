@@ -33,11 +33,11 @@ class Key {
     // Key &operator=(Key &&);
 
     Result<Key> open_key(std::string key_name) const;
-    Result<DWORD> get_subkeys_count() const;
-    Result<std::string> enum_subkey_names(DWORD idx) const;
-    Result<DWORD> get_dword(std::string value_name) const;
-    Result<std::vector<DWORD>>
-    get_dwords(const std::vector<std::string> &value_names) const;
+    Result<uint32_t> get_subkeys_count() const;
+    Result<std::string> enum_subkey_names(uint32_t idx) const;
+    Result<uint32_t> get_u32(std::string value_name) const;
+    Result<std::vector<uint32_t>>
+    get_u32s(const std::vector<std::string> &value_names) const;
     Result<std::string> get_string(std::string value_name) const;
     Result<std::vector<std::string>>
     get_strings(const std::vector<std::string> &value_names) const;

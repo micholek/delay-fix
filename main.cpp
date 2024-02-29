@@ -24,9 +24,9 @@ struct MediaInfo {
     std::string driver_version;
     std::string driver_data;
     std::string provider_name;
-    DWORD conservation_idle_time;
-    DWORD performance_idle_time;
-    DWORD idle_power_state;
+    uint32_t conservation_idle_time;
+    uint32_t performance_idle_time;
+    uint32_t idle_power_state;
 };
 
 std::string get_key_path(std::string parent, std::string key) {
@@ -52,12 +52,12 @@ int main() {
         reg::print_error(msk_count_res.error());
         return -1;
     }
-    DWORD msk_count = msk_count_res.value();
+    uint32_t msk_count = msk_count_res.value();
 
     std::vector<MediaInfo> media_infos;
     media_infos.reserve(msk_count);
 
-    for (DWORD i = 0; i < msk_count; i++) {
+    for (uint32_t i = 0; i < msk_count; i++) {
         auto msk_name_res = mk.enum_subkey_names(i);
         if (!msk_name_res.has_value()) {
             reg::print_error(msk_name_res.error());
@@ -84,13 +84,13 @@ int main() {
             "PerformanceIdleTime",
             "IdlePowerState",
         };
-        auto ps_values_res = psk.get_dwords(
+        auto ps_values_res = psk.get_u32s(
             std::vector<std::string>(std::begin(ps_names), std::end(ps_names)));
         if (!ps_values_res.has_value()) {
             reg::print_error(ps_values_res.error());
             continue;
         }
-        std::vector<DWORD> ps_values = ps_values_res.value();
+        std::vector<uint32_t> ps_values = ps_values_res.value();
 
         const std::string mi_names[_MEDIA_INST_VAL_COUNT] = {
             "DriverDesc",
