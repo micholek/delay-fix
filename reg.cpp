@@ -55,20 +55,18 @@ Key::Key(SystemKey sk)
     : k_ {system_key_to_key_ptr(sk)}, is_system {true},
       path_ {system_key_to_path(sk)}, err_ {Error {}} {}
 
-Key::Key(SystemKey sk, std::string subkey_name)
-    : Key(system_key_to_key_ptr(sk), subkey_name, system_key_to_path(sk),
-          true) {}
-
 Key::Key(const Key &k, std::string subkey_name)
-    : Key(k.k_, subkey_name, k.path_) {}
-
-Key::Key(uintptr_t k, std::string subkey_name, std::string parent_path,
-         bool is_parent_system)
-    : is_system {is_parent_system && subkey_name.empty()} {
-    LSTATUS res = RegOpenKeyExA((HKEY) k, subkey_name.c_str(), 0,
-                                KEY_READ | KEY_WRITE, (HKEY *) &k_);
-    update_error_(res, create_msg("Could not open a key", subkey_name));
-    path_ = create_path(parent_path, subkey_name);
+    : is_system {k.is_system && subkey_name.empty()} {
+    if (is_system) {
+        k_ = k.k_;
+        err_ = Error {};
+        path_ = k.path_;
+    } else {
+        LSTATUS res = RegOpenKeyExA((HKEY) k.k_, subkey_name.c_str(), 0,
+                                    KEY_READ | KEY_WRITE, (HKEY *) &k_);
+        update_error_(res, create_msg("Could not open a key", subkey_name));
+        path_ = create_path(k.path_, subkey_name);
+    }
 }
 
 bool Key::is_valid() const {

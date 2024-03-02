@@ -20,9 +20,6 @@ class Key {
     // Creates a system key. Should not be used in client code.
     Key(SystemKey sk);
 
-    // Creates and opens a new subkey of a system key
-    Key(SystemKey sk, std::string subkey_name);
-
     // Creates and opens a new subkey of another key
     Key(const Key &k, std::string subkey_name);
 
@@ -54,8 +51,6 @@ class Key {
     std::string path_;
     Error err_;
 
-    Key(uintptr_t k, std::string subkey_name, std::string parent_path,
-        bool is_parent_system = false);
     void update_error_(int32_t res, std::string msg);
 };
 
