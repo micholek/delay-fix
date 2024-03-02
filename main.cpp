@@ -33,7 +33,7 @@ int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
-    reg::Key mk(reg::SystemKey::LocalMachine, media_path);
+    reg::Key mk(reg::LocalMachine, media_path);
     if (!mk.is_valid()) {
         reg::print_error(mk.get_error());
         return -1;

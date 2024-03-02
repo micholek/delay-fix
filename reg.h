@@ -17,6 +17,9 @@ enum class SystemKey { LocalMachine };
 
 class Key {
   public:
+    // Creates a system key. Should not be used in client code.
+    Key(SystemKey sk);
+
     // Creates and opens a new subkey of a system key
     Key(SystemKey sk, std::string subkey_name);
 
@@ -46,13 +49,18 @@ class Key {
     std::string get_path() const;
 
   private:
-    uintptr_t *k_ {nullptr};
-    Error err_;
+    uintptr_t k_;
+    bool is_system;
     std::string path_;
+    Error err_;
 
-    Key(uintptr_t *k, std::string subkey_name, std::string parent_path);
+    Key(uintptr_t k, std::string subkey_name, std::string parent_path,
+        bool is_parent_system = false);
     void update_error_(int32_t res, std::string msg);
 };
+
+// System key wrapped in global object for use in client code
+static inline const Key LocalMachine(SystemKey::LocalMachine);
 
 void print_error(Error err);
 

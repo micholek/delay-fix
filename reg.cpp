@@ -18,15 +18,22 @@ constexpr std::string system_key_to_path(reg::SystemKey sk) {
 }
 
 std::string create_path(std::string parent_path, std::string subkey_name) {
-    return std::format("{}\\{}", parent_path, subkey_name);
+    if (!subkey_name.empty()) {
+        return std::format("{}\\{}", parent_path, subkey_name);
+    }
+    return parent_path;
 }
 
-constexpr HKEY system_key_to_hkey(reg::SystemKey sk) {
+constexpr uintptr_t system_key_to_key_ptr(reg::SystemKey sk) {
+    HKEY k;
     switch (sk) {
     case reg::SystemKey::LocalMachine:
-        return HKEY_LOCAL_MACHINE;
+        k = HKEY_LOCAL_MACHINE;
+        break;
+    default:
+        k = HKEY_LOCAL_MACHINE; // fallback for now
     }
-    return HKEY_LOCAL_MACHINE; // fallback for now
+    return (uintptr_t) k;
 }
 
 } // namespace
@@ -44,14 +51,20 @@ constexpr HKEY system_key_to_hkey(reg::SystemKey sk) {
 
 namespace reg {
 
+Key::Key(SystemKey sk)
+    : k_ {system_key_to_key_ptr(sk)}, is_system {true},
+      path_ {system_key_to_path(sk)}, err_ {Error {}} {}
+
 Key::Key(SystemKey sk, std::string subkey_name)
-    : Key((uintptr_t *) system_key_to_hkey(sk), subkey_name,
-          system_key_to_path(sk)) {}
+    : Key(system_key_to_key_ptr(sk), subkey_name, system_key_to_path(sk),
+          true) {}
 
 Key::Key(const Key &k, std::string subkey_name)
     : Key(k.k_, subkey_name, k.path_) {}
 
-Key::Key(uintptr_t *k, std::string subkey_name, std::string parent_path) {
+Key::Key(uintptr_t k, std::string subkey_name, std::string parent_path,
+         bool is_parent_system)
+    : is_system {is_parent_system && subkey_name.empty()} {
     LSTATUS res = RegOpenKeyExA((HKEY) k, subkey_name.c_str(), 0,
                                 KEY_READ | KEY_WRITE, (HKEY *) &k_);
     update_error_(res, create_msg("Could not open a key", subkey_name));
@@ -59,7 +72,7 @@ Key::Key(uintptr_t *k, std::string subkey_name, std::string parent_path) {
 }
 
 bool Key::is_valid() const {
-    return k_ != nullptr;
+    return k_ != (uintptr_t) nullptr;
 }
 
 Error Key::get_error() const {
@@ -67,10 +80,10 @@ Error Key::get_error() const {
 }
 
 Key::~Key() {
-    if (k_ != nullptr) {
+    if (!is_system && is_valid()) {
         LSTATUS res = RegCloseKey((HKEY) k_);
         update_error_(res, "Could not close the key");
-        k_ = nullptr;
+        k_ = (uintptr_t) nullptr;
     }
 }
 
