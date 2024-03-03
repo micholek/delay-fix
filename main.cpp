@@ -34,6 +34,8 @@ void print_error(const reg::Error &err) {
 }
 
 int main() {
+    using namespace std::string_literals;
+
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
@@ -73,11 +75,12 @@ int main() {
             continue;
         }
 
-        const std::array<std::string, _POWER_SETTINGS_VAL_COUNT> ps_names = {
-            "ConservationIdleTime",
-            "PerformanceIdleTime",
-            "IdlePowerState",
+        const std::array ps_names = {
+            "ConservationIdleTime"s,
+            "PerformanceIdleTime"s,
+            "IdlePowerState"s,
         };
+        static_assert(ps_names.size() == _POWER_SETTINGS_VAL_COUNT);
         auto ps_values_res = psk.get_u32s(ps_names);
         if (!ps_values_res.has_value()) {
             print_error(ps_values_res.error());
@@ -85,12 +88,13 @@ int main() {
         }
         std::vector<uint32_t> ps_values = ps_values_res.value();
 
-        const std::array<std::string, _MEDIA_INST_VAL_COUNT> mi_names = {
-            "DriverDesc",
-            "DriverVersion",
-            "DriverDate",
-            "ProviderName",
+        const std::array mi_names = {
+            "DriverDesc"s,
+            "DriverVersion"s,
+            "DriverDate"s,
+            "ProviderName"s,
         };
+        static_assert(mi_names.size() == _MEDIA_INST_VAL_COUNT);
         auto mi_values_res = msk.get_strings(mi_names);
         if (!mi_values_res.has_value()) {
             print_error(mi_values_res.error());
