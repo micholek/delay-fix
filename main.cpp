@@ -102,7 +102,7 @@ int main() {
         }
         std::vector<std::string> mi_values = mi_values_res.value();
 
-        MediaInfo mi = {
+        media_infos.push_back(MediaInfo {
             .reg_key_path = msk.path(),
             .driver_desc = mi_values[MEDIA_INST_VAL_DRIVER_DESC],
             .driver_version = mi_values[MEDIA_INST_VAL_DRIVER_VERSION],
@@ -113,8 +113,7 @@ int main() {
             .performance_idle_time =
                 ps_values[POWER_SETTINGS_VAL_PERF_IDLE_TIME],
             .idle_power_state = ps_values[POWER_SETTINGS_VAL_IDLE_POWER_STATE],
-        };
-        media_infos.push_back(mi);
+        });
     }
 
     const size_t mi_size = media_infos.size();
