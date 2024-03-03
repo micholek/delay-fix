@@ -22,7 +22,7 @@ class Key {
     Key(SystemKey sk);
 
     // Creates and opens a new subkey of another key
-    Key(const Key &k, std::string subkey_name);
+    Key(const Key &k, const std::string &subkey_name);
 
     // Destroys and closes the key
     ~Key();
@@ -43,16 +43,14 @@ class Key {
     get_strings(std::span<const std::string> value_names) const;
 
     bool valid() const;
-    Error error() const;
     std::string path() const;
+    Error error() const;
 
   private:
     uintptr_t k_;
     bool system_;
     std::string path_;
-    Error err_;
-
-    void update_error_(int32_t res, std::string msg);
+    Error err_ {};
 };
 
 // System key wrapped in global object for use in client code
