@@ -57,6 +57,4 @@ class Key {
 // System key wrapped in global object for use in client code
 static inline const Key LocalMachine(SystemKey::LocalMachine);
 
-void print_error(Error err);
-
 } // namespace reg

@@ -1,6 +1,5 @@
 #include "reg.h"
 #include <format>
-#include <print>
 #include <windows.h>
 
 namespace {
@@ -164,10 +163,6 @@ void Key::update_error_(int32_t res, std::string err_msg) {
         .code = res,
         .msg = (res != ERROR_SUCCESS) ? err_msg : "",
     };
-}
-
-void print_error(Error err) {
-    std::println(stderr, "{} (error code: {})", err.msg, err.code);
 }
 
 } // namespace reg

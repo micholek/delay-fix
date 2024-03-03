@@ -29,19 +29,23 @@ struct MediaInfo {
     uint32_t idle_power_state;
 };
 
+void print_error(const reg::Error &err) {
+    std::println(stderr, "{} (error code: {})", err.msg, err.code);
+}
+
 int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
     reg::Key mk(reg::LocalMachine, media_path);
     if (!mk.valid()) {
-        reg::print_error(mk.error());
+        print_error(mk.error());
         return -1;
     }
 
     auto msk_count_res = mk.get_subkeys_count();
     if (!msk_count_res.has_value()) {
-        reg::print_error(msk_count_res.error());
+        print_error(msk_count_res.error());
         return -1;
     }
     uint32_t msk_count = msk_count_res.value();
@@ -52,20 +56,20 @@ int main() {
     for (uint32_t i = 0; i < msk_count; i++) {
         auto msk_name_res = mk.enum_subkey_names(i);
         if (!msk_name_res.has_value()) {
-            reg::print_error(msk_name_res.error());
+            print_error(msk_name_res.error());
             continue;
         }
         std::string msk_name = msk_name_res.value();
 
         reg::Key msk(mk, msk_name);
         if (!msk.valid()) {
-            reg::print_error(msk.error());
+            print_error(msk.error());
             continue;
         }
 
         reg::Key psk(msk, "PowerSettings");
         if (!psk.valid()) {
-            reg::print_error(psk.error());
+            print_error(psk.error());
             continue;
         }
 
@@ -77,7 +81,7 @@ int main() {
         auto ps_values_res = psk.get_u32s(
             std::vector<std::string>(std::begin(ps_names), std::end(ps_names)));
         if (!ps_values_res.has_value()) {
-            reg::print_error(ps_values_res.error());
+            print_error(ps_values_res.error());
             continue;
         }
         std::vector<uint32_t> ps_values = ps_values_res.value();
@@ -91,7 +95,7 @@ int main() {
         auto mi_values_res = msk.get_strings(
             std::vector<std::string>(std::begin(mi_names), std::end(mi_names)));
         if (!mi_values_res.has_value()) {
-            reg::print_error(mi_values_res.error());
+            print_error(mi_values_res.error());
             continue;
         }
         std::vector<std::string> mi_values = mi_values_res.value();
