@@ -34,8 +34,8 @@ int main() {
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
     reg::Key mk(reg::LocalMachine, media_path);
-    if (!mk.is_valid()) {
-        reg::print_error(mk.get_error());
+    if (!mk.valid()) {
+        reg::print_error(mk.error());
         return -1;
     }
 
@@ -58,14 +58,14 @@ int main() {
         std::string msk_name = msk_name_res.value();
 
         reg::Key msk(mk, msk_name);
-        if (!msk.is_valid()) {
-            reg::print_error(msk.get_error());
+        if (!msk.valid()) {
+            reg::print_error(msk.error());
             continue;
         }
 
         reg::Key psk(msk, "PowerSettings");
-        if (!psk.is_valid()) {
-            reg::print_error(psk.get_error());
+        if (!psk.valid()) {
+            reg::print_error(psk.error());
             continue;
         }
 
@@ -97,7 +97,7 @@ int main() {
         std::vector<std::string> mi_values = mi_values_res.value();
 
         MediaInfo mi = {
-            .reg_key_path = msk.get_path(),
+            .reg_key_path = msk.path(),
             .driver_desc = mi_values[MEDIA_INST_VAL_DRIVER_DESC],
             .driver_version = mi_values[MEDIA_INST_VAL_DRIVER_VERSION],
             .driver_data = mi_values[MEDIA_INST_VAL_DRIVER_DATA],

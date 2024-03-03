@@ -52,12 +52,12 @@ constexpr uintptr_t system_key_to_key_ptr(reg::SystemKey sk) {
 namespace reg {
 
 Key::Key(SystemKey sk)
-    : k_ {system_key_to_key_ptr(sk)}, is_system {true},
+    : k_ {system_key_to_key_ptr(sk)}, system_ {true},
       path_ {system_key_to_path(sk)}, err_ {Error {}} {}
 
 Key::Key(const Key &k, std::string subkey_name)
-    : is_system {k.is_system && subkey_name.empty()} {
-    if (is_system) {
+    : system_ {k.system_ && subkey_name.empty()} {
+    if (system_) {
         k_ = k.k_;
         err_ = Error {};
         path_ = k.path_;
@@ -69,16 +69,16 @@ Key::Key(const Key &k, std::string subkey_name)
     }
 }
 
-bool Key::is_valid() const {
+bool Key::valid() const {
     return k_ != (uintptr_t) nullptr;
 }
 
-Error Key::get_error() const {
+Error Key::error() const {
     return err_;
 }
 
 Key::~Key() {
-    if (!is_system && is_valid()) {
+    if (!system_ && valid()) {
         LSTATUS res = RegCloseKey((HKEY) k_);
         update_error_(res, "Could not close the key");
         k_ = (uintptr_t) nullptr;
@@ -155,7 +155,7 @@ Key::get_strings(const std::vector<std::string> &value_names) const {
     return values;
 }
 
-std::string Key::get_path() const {
+std::string Key::path() const {
     return path_;
 }
 

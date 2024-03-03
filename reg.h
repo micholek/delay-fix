@@ -41,13 +41,13 @@ class Key {
     Result<std::vector<std::string>>
     get_strings(const std::vector<std::string> &value_names) const;
 
-    bool is_valid() const;
-    Error get_error() const;
-    std::string get_path() const;
+    bool valid() const;
+    Error error() const;
+    std::string path() const;
 
   private:
     uintptr_t k_;
-    bool is_system;
+    bool system_;
     std::string path_;
     Error err_;
 
