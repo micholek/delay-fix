@@ -110,7 +110,7 @@ Result<uint32_t> Key::get_u32(std::string value_name) const {
 }
 
 Result<std::vector<uint32_t>>
-Key::get_u32s(const std::vector<std::string> &value_names) const {
+Key::get_u32s(std::span<const std::string> value_names) const {
     std::vector<uint32_t> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
         auto value_res = get_u32(value_names[i]);
@@ -137,7 +137,7 @@ Result<std::string> Key::get_string(std::string value_name) const {
 }
 
 Result<std::vector<std::string>>
-Key::get_strings(const std::vector<std::string> &value_names) const {
+Key::get_strings(std::span<const std::string> value_names) const {
     std::vector<std::string> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
         auto value_res = get_string(value_names[i]);

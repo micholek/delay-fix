@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -36,10 +37,10 @@ class Key {
     Result<std::string> enum_subkey_names(uint32_t idx) const;
     Result<uint32_t> get_u32(std::string value_name) const;
     Result<std::vector<uint32_t>>
-    get_u32s(const std::vector<std::string> &value_names) const;
+    get_u32s(std::span<const std::string> value_names) const;
     Result<std::string> get_string(std::string value_name) const;
     Result<std::vector<std::string>>
-    get_strings(const std::vector<std::string> &value_names) const;
+    get_strings(std::span<const std::string> value_names) const;
 
     bool valid() const;
     Error error() const;

@@ -78,22 +78,20 @@ int main() {
             "PerformanceIdleTime",
             "IdlePowerState",
         };
-        auto ps_values_res = psk.get_u32s(
-            std::vector<std::string>(std::begin(ps_names), std::end(ps_names)));
+        auto ps_values_res = psk.get_u32s(ps_names);
         if (!ps_values_res.has_value()) {
             print_error(ps_values_res.error());
             continue;
         }
         std::vector<uint32_t> ps_values = ps_values_res.value();
 
-        const std::string mi_names[_MEDIA_INST_VAL_COUNT] = {
+        const std::array<std::string, _MEDIA_INST_VAL_COUNT> mi_names = {
             "DriverDesc",
             "DriverVersion",
             "DriverDate",
             "ProviderName",
         };
-        auto mi_values_res = msk.get_strings(
-            std::vector<std::string>(std::begin(mi_names), std::end(mi_names)));
+        auto mi_values_res = msk.get_strings(mi_names);
         if (!mi_values_res.has_value()) {
             print_error(mi_values_res.error());
             continue;
