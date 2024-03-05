@@ -3,30 +3,70 @@
 #include <array>
 #include <print>
 
-enum MediaInstanceValue {
-    MEDIA_INST_VAL_DRIVER_DESC,
-    MEDIA_INST_VAL_DRIVER_VERSION,
-    MEDIA_INST_VAL_DRIVER_DATA,
-    MEDIA_INST_VAL_PROVIDER_NAME,
-    _MEDIA_INST_VAL_COUNT
+enum class DriverValue : uint8_t {
+    Desc,
+    Version,
+    Date,
+    ProviderName,
+    _Count,
 };
 
-enum PowerSettingsValue {
-    POWER_SETTINGS_VAL_CONS_IDLE_TIME,
-    POWER_SETTINGS_VAL_PERF_IDLE_TIME,
-    POWER_SETTINGS_VAL_IDLE_POWER_STATE,
-    _POWER_SETTINGS_VAL_COUNT
+enum class PowerSettingsValue : uint8_t {
+    ConsIdleTime,
+    PerfIdleTime,
+    IdlePowerState,
+    _Count,
+};
+
+struct Driver {
+    std::string desc;
+    std::string version;
+    std::string date;
+    std::string provider_name;
+
+    using enum DriverValue;
+
+    Driver(std::span<const std::string> data)
+        : desc {data[std::to_underlying(Desc)]},
+          version {data[std::to_underlying(Version)]},
+          date {data[std::to_underlying(Date)]},
+          provider_name {data[std::to_underlying(ProviderName)]} {}
+
+    static auto create_value_names() {
+        std::array<std::string, std::to_underlying(_Count)> arr;
+        arr[std::to_underlying(Desc)] = "DriverDesc";
+        arr[std::to_underlying(Version)] = "DriverVersion";
+        arr[std::to_underlying(Date)] = "DriverDate";
+        arr[std::to_underlying(ProviderName)] = "ProviderName";
+        return arr;
+    }
+};
+
+struct PowerSettings {
+    uint32_t cons_idle_time;
+    uint32_t perf_idle_time;
+    uint32_t idle_power_state;
+
+    using enum PowerSettingsValue;
+
+    PowerSettings(std::span<const uint32_t> data)
+        : cons_idle_time {data[std::to_underlying(ConsIdleTime)]},
+          perf_idle_time {data[std::to_underlying(PerfIdleTime)]},
+          idle_power_state {data[std::to_underlying(IdlePowerState)]} {}
+
+    static auto create_value_names() {
+        std::array<std::string, std::to_underlying(_Count)> arr;
+        arr[std::to_underlying(ConsIdleTime)] = "ConservationIdleTime";
+        arr[std::to_underlying(PerfIdleTime)] = "PerformanceIdleTime";
+        arr[std::to_underlying(IdlePowerState)] = "IdlePowerState";
+        return arr;
+    }
 };
 
 struct MediaInfo {
     std::string reg_key_path;
-    std::string driver_desc;
-    std::string driver_version;
-    std::string driver_data;
-    std::string provider_name;
-    uint32_t conservation_idle_time;
-    uint32_t performance_idle_time;
-    uint32_t idle_power_state;
+    Driver drv;
+    PowerSettings ps;
 };
 
 void print_error(const reg::Error &err) {
@@ -34,8 +74,6 @@ void print_error(const reg::Error &err) {
 }
 
 int main() {
-    using namespace std::string_literals;
-
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
@@ -75,44 +113,26 @@ int main() {
             continue;
         }
 
-        const std::array ps_names = {
-            "ConservationIdleTime"s,
-            "PerformanceIdleTime"s,
-            "IdlePowerState"s,
-        };
-        static_assert(ps_names.size() == _POWER_SETTINGS_VAL_COUNT);
-        auto ps_values_res = psk.get_u32s(ps_names);
+        const std::array ps_value_names = PowerSettings::create_value_names();
+        auto ps_values_res = psk.get_u32s(ps_value_names);
         if (!ps_values_res.has_value()) {
             print_error(ps_values_res.error());
             continue;
         }
         std::vector<uint32_t> ps_values = ps_values_res.value();
 
-        const std::array mi_names = {
-            "DriverDesc"s,
-            "DriverVersion"s,
-            "DriverDate"s,
-            "ProviderName"s,
-        };
-        static_assert(mi_names.size() == _MEDIA_INST_VAL_COUNT);
-        auto mi_values_res = msk.get_strings(mi_names);
-        if (!mi_values_res.has_value()) {
-            print_error(mi_values_res.error());
+        const std::array drv_value_names = Driver::create_value_names();
+        auto drv_values_res = msk.get_strings(drv_value_names);
+        if (!drv_values_res.has_value()) {
+            print_error(drv_values_res.error());
             continue;
         }
-        std::vector<std::string> mi_values = mi_values_res.value();
+        std::vector<std::string> drv_values = drv_values_res.value();
 
         media_infos.push_back(MediaInfo {
             .reg_key_path = msk.path(),
-            .driver_desc = mi_values[MEDIA_INST_VAL_DRIVER_DESC],
-            .driver_version = mi_values[MEDIA_INST_VAL_DRIVER_VERSION],
-            .driver_data = mi_values[MEDIA_INST_VAL_DRIVER_DATA],
-            .provider_name = mi_values[MEDIA_INST_VAL_PROVIDER_NAME],
-            .conservation_idle_time =
-                ps_values[POWER_SETTINGS_VAL_CONS_IDLE_TIME],
-            .performance_idle_time =
-                ps_values[POWER_SETTINGS_VAL_PERF_IDLE_TIME],
-            .idle_power_state = ps_values[POWER_SETTINGS_VAL_IDLE_POWER_STATE],
+            .drv = Driver(drv_values),
+            .ps = PowerSettings(ps_values),
         });
     }
 
@@ -130,10 +150,10 @@ int main() {
                      "Conservation Idle Time = {:#010x}\n"
                      " Performance Idle Time = {:#010x}\n"
                      "      Idle Power State = {:#010x}\n\n",
-                     i, mi.driver_desc, mi.driver_version.c_str(),
-                     mi.driver_data, mi.provider_name.c_str(), mi.reg_key_path,
-                     mi.conservation_idle_time, mi.performance_idle_time,
-                     mi.idle_power_state);
+                     i, mi.drv.desc, mi.drv.version.c_str(), mi.drv.date,
+                     mi.drv.provider_name.c_str(), mi.reg_key_path,
+                     mi.ps.cons_idle_time, mi.ps.perf_idle_time,
+                     mi.ps.idle_power_state);
     }
     return 0;
 }
