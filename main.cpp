@@ -77,57 +77,57 @@ int main() {
     const std::string media_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\"
                                    "{4d36e96c-e325-11ce-bfc1-08002be10318}";
 
-    reg::Key mk(reg::LocalMachine, media_path);
+    const reg::Key mk(reg::LocalMachine, media_path);
     if (!mk.valid()) {
         print_error(mk.error());
         return -1;
     }
 
-    auto msk_count_res = mk.get_subkeys_count();
+    const auto msk_count_res = mk.get_subkeys_count();
     if (!msk_count_res.has_value()) {
         print_error(msk_count_res.error());
         return -1;
     }
-    uint32_t msk_count = msk_count_res.value();
+    const uint32_t msk_count = msk_count_res.value();
 
     std::vector<MediaInfo> media_infos;
     media_infos.reserve(msk_count);
 
     for (uint32_t i = 0; i < msk_count; i++) {
-        auto msk_name_res = mk.enum_subkey_names(i);
+        const auto msk_name_res = mk.enum_subkey_names(i);
         if (!msk_name_res.has_value()) {
             print_error(msk_name_res.error());
             continue;
         }
-        std::string msk_name = msk_name_res.value();
+        const std::string msk_name = msk_name_res.value();
 
-        reg::Key msk(mk, msk_name);
+        const reg::Key msk(mk, msk_name);
         if (!msk.valid()) {
             print_error(msk.error());
             continue;
         }
 
-        reg::Key psk(msk, "PowerSettings");
+        const reg::Key psk(msk, "PowerSettings");
         if (!psk.valid()) {
             print_error(psk.error());
             continue;
         }
 
         const std::array ps_value_names = PowerSettings::create_value_names();
-        auto ps_values_res = psk.get_u32s(ps_value_names);
+        const auto ps_values_res = psk.get_u32s(ps_value_names);
         if (!ps_values_res.has_value()) {
             print_error(ps_values_res.error());
             continue;
         }
-        std::vector<uint32_t> ps_values = ps_values_res.value();
+        const std::vector<uint32_t> ps_values = ps_values_res.value();
 
         const std::array drv_value_names = Driver::create_value_names();
-        auto drv_values_res = msk.get_strings(drv_value_names);
+        const auto drv_values_res = msk.get_strings(drv_value_names);
         if (!drv_values_res.has_value()) {
             print_error(drv_values_res.error());
             continue;
         }
-        std::vector<std::string> drv_values = drv_values_res.value();
+        const std::vector<std::string> drv_values = drv_values_res.value();
 
         media_infos.push_back(MediaInfo {
             .reg_key_path = msk.path(),
