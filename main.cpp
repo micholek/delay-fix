@@ -79,7 +79,7 @@ int main() {
 
     const reg::Key mk(reg::LocalMachine, media_path);
     if (!mk.valid()) {
-        print_error(mk.error());
+        std::println(stderr, "Could not open a key {}", mk.path());
         return -1;
     }
 
@@ -103,13 +103,13 @@ int main() {
 
         const reg::Key msk(mk, msk_name);
         if (!msk.valid()) {
-            print_error(msk.error());
+            std::println(stderr, "Could not open a key '{}'", msk.path());
             continue;
         }
 
         const reg::Key psk(msk, "PowerSettings");
         if (!psk.valid()) {
-            print_error(psk.error());
+            std::println(stderr, "Could not open a key '{}'", msk.path());
             continue;
         }
 

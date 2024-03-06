@@ -44,13 +44,11 @@ class Key {
 
     bool valid() const;
     std::string path() const;
-    Error error() const;
 
   private:
     uintptr_t k_;
     bool system_;
     std::string path_;
-    Error err_ {};
 };
 
 // System key wrapped in global object for use in client code

@@ -36,13 +36,6 @@ std::string create_path(std::string parent_path,
     return parent_path;
 }
 
-reg::Error create_error(int32_t res, const std::string &err_msg) {
-    return {
-        .code = res,
-        .msg = (res != ERROR_SUCCESS) ? err_msg : "",
-    };
-}
-
 } // namespace
 
 namespace reg {
@@ -52,20 +45,17 @@ Key::Key(SystemKey sk)
       path_ {system_key_to_path(sk)} {}
 
 Key::Key(const Key &k, const std::string &subkey_name)
-    : k_ {k.k_}, system_ {k.system_ && subkey_name.empty()},
+    : k_ {(uintptr_t) nullptr}, system_ {k.system_ && subkey_name.empty()},
       path_ {create_path(k.path_, subkey_name)} {
     if (!system_) {
-        LSTATUS res = RegOpenKeyExA((HKEY) k.k_, subkey_name.c_str(), 0,
-                                    KEY_READ | KEY_WRITE, (HKEY *) &k_);
-        err_ =
-            create_error(res, create_msg("Could not open a key", subkey_name));
+        RegOpenKeyExA((HKEY) k.k_, subkey_name.c_str(), 0, KEY_READ | KEY_WRITE,
+                      (HKEY *) &k_);
     }
 }
 
 Key::~Key() {
     if (!system_ && valid()) {
-        LSTATUS res = RegCloseKey((HKEY) k_);
-        err_ = create_error(res, "Could not close the key");
+        RegCloseKey((HKEY) k_);
         k_ = (uintptr_t) nullptr;
     }
 }
@@ -157,10 +147,6 @@ bool Key::valid() const {
 
 std::string Key::path() const {
     return path_;
-}
-
-Error Key::error() const {
-    return err_;
 }
 
 } // namespace reg
