@@ -1,6 +1,7 @@
 #include "reg.h"
 
 #include <array>
+#include <iostream>
 #include <print>
 
 enum class DriverValue : uint8_t {
@@ -155,5 +156,24 @@ int main() {
                      mi.ps.cons_idle_time, mi.ps.perf_idle_time,
                      mi.ps.idle_power_state);
     }
+
+    size_t choice;
+    for (;;) {
+        std::print("Select media instance (0-{}) >> ", mi_size - 1);
+        std::string input;
+        if (std::getline(std::cin, input).fail()) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        } else {
+            const char *last = input.data() + input.size();
+            auto [ptr, err] = std::from_chars(input.data(), last, choice);
+            if (err == std::errc {} && ptr == last && choice < mi_size) {
+                break;
+            }
+        }
+    }
+
+    std::println("Selected #{} {}", choice, media_infos[choice].drv.desc);
+
     return 0;
 }
