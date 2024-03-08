@@ -53,6 +53,24 @@ Key::Key(const Key &k, const std::string &subkey_name)
     }
 }
 
+Key::Key(Key &&other)
+    : k_ {other.k_}, system_ {other.system_}, path_ {std::move(other.path_)} {
+    other.k_ = (uintptr_t) nullptr;
+}
+
+Key &Key::operator=(Key &&other) {
+    if (this != &other) {
+        if (!system_ && valid()) {
+            RegCloseKey((HKEY) k_);
+        }
+        k_ = other.k_;
+        system_ = other.system_;
+        path_ = std::move(other.path_);
+        other.k_ = (uintptr_t) nullptr;
+    }
+    return *this;
+}
+
 Key::~Key() {
     if (!system_ && valid()) {
         RegCloseKey((HKEY) k_);

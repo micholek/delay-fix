@@ -27,11 +27,14 @@ class Key {
     // Destroys and closes the key
     ~Key();
 
-    // TODO: implement special methods
-    // Key(const Key &);
-    // Key &operator=(const Key &);
-    // Key(Key &&) = delete;
-    // Key &operator=(Key &&);
+    // Creates a key using move semantics
+    Key(Key &&);
+
+    // Closes the key and assigns a new one using move semantics
+    Key &operator=(Key &&);
+
+    Key(const Key &) = delete;
+    Key &operator=(const Key &) = delete;
 
     Result<uint32_t> get_subkeys_count() const;
     Result<std::string> enum_subkey_names(uint32_t idx) const;

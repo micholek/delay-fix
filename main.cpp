@@ -65,7 +65,7 @@ struct PowerSettings {
 };
 
 struct MediaInfo {
-    std::string reg_key_path;
+    reg::Key key;
     Driver drv;
     PowerSettings ps;
 };
@@ -102,7 +102,7 @@ int main() {
         }
         const std::string msk_name = msk_name_res.value();
 
-        const reg::Key msk(mk, msk_name);
+        reg::Key msk(mk, msk_name);
         if (!msk.valid()) {
             std::println(stderr, "Could not open a key '{}'", msk.path());
             continue;
@@ -131,7 +131,7 @@ int main() {
         const std::vector<std::string> drv_values = drv_values_res.value();
 
         media_infos.push_back(MediaInfo {
-            .reg_key_path = msk.path(),
+            .key = std::move(msk),
             .drv = Driver(drv_values),
             .ps = PowerSettings(ps_values),
         });
@@ -152,7 +152,7 @@ int main() {
                      " Performance Idle Time = {:#010x}\n"
                      "      Idle Power State = {:#010x}\n\n",
                      i, mi.drv.desc, mi.drv.version.c_str(), mi.drv.date,
-                     mi.drv.provider_name.c_str(), mi.reg_key_path,
+                     mi.drv.provider_name.c_str(), mi.key.path(),
                      mi.ps.cons_idle_time, mi.ps.perf_idle_time,
                      mi.ps.idle_power_state);
     }
@@ -173,7 +173,8 @@ int main() {
         }
     }
 
-    std::println("Selected #{} {}", choice, media_infos[choice].drv.desc);
+    const MediaInfo &selected_mi = media_infos[choice];
+    std::println("Selected #{} {}\n", choice, selected_mi.drv.desc);
 
     return 0;
 }
