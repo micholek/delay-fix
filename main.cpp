@@ -50,10 +50,15 @@ struct PowerSettings {
 
     using enum PowerSettingsValue;
 
-    PowerSettings(std::span<const uint32_t> data)
-        : cons_idle_time {data[std::to_underlying(ConsIdleTime)]},
-          perf_idle_time {data[std::to_underlying(PerfIdleTime)]},
-          idle_power_state {data[std::to_underlying(IdlePowerState)]} {}
+    constexpr PowerSettings(std::span<const uint32_t> data)
+        : PowerSettings(data[std::to_underlying(ConsIdleTime)],
+                        data[std::to_underlying(PerfIdleTime)],
+                        data[std::to_underlying(IdlePowerState)]) {}
+
+    constexpr PowerSettings(uint32_t cons_idle_time, uint32_t perf_idle_time,
+                            uint32_t idle_power_state)
+        : cons_idle_time {cons_idle_time}, perf_idle_time {perf_idle_time},
+          idle_power_state {idle_power_state} {}
 
     static auto create_value_names() {
         std::array<std::string, std::to_underlying(_Count)> arr;
@@ -65,13 +70,41 @@ struct PowerSettings {
 };
 
 struct MediaInfo {
-    reg::Key key;
+    size_t id;
+    reg::Key main_key;
+    reg::Key ps_key;
     Driver drv;
     PowerSettings ps;
+
+    std::string description() const {
+        return std::format(
+            "#{} {} | version: {} | date: {} | provider name: {}\n"
+            "(registry key path: {})",
+            id, drv.desc, drv.version.c_str(), drv.date.c_str(),
+            drv.provider_name.c_str(), main_key.path());
+    }
 };
 
 void print_error(const reg::Error &err) {
     std::println(stderr, "{} (error code: {})", err.msg, err.code);
+}
+
+bool get_input(std::string &input) {
+    if (std::getline(std::cin, input).fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return false;
+    }
+    return true;
+}
+
+constexpr auto create_update_ps_values() {
+    using enum PowerSettingsValue;
+    std::array<uint32_t, std::to_underlying(_Count)> arr;
+    arr[std::to_underlying(ConsIdleTime)] = 0xffffffff;
+    arr[std::to_underlying(PerfIdleTime)] = 0xffffffff;
+    arr[std::to_underlying(IdlePowerState)] = 0x3;
+    return arr;
 }
 
 int main() {
@@ -108,7 +141,7 @@ int main() {
             continue;
         }
 
-        const reg::Key psk(msk, "PowerSettings");
+        reg::Key psk(msk, "PowerSettings");
         if (!psk.valid()) {
             std::println(stderr, "Could not open a key '{}'", msk.path());
             continue;
@@ -131,7 +164,9 @@ int main() {
         const std::vector<std::string> drv_values = drv_values_res.value();
 
         media_infos.push_back(MediaInfo {
-            .key = std::move(msk),
+            .id = media_infos.size(),
+            .main_key = std::move(msk),
+            .ps_key = std::move(psk),
             .drv = Driver(drv_values),
             .ps = PowerSettings(ps_values),
         });
@@ -146,25 +181,19 @@ int main() {
     std::print("Found {} media instances:\n\n", mi_size);
     for (size_t i = 0; i < mi_size; i++) {
         const auto &mi = media_infos[i];
-        std::println("#{} {} | version: {} | date: {} | provider name: {}\n"
-                     "(registry key path: {}\n"
+        std::println("{}\n"
                      "Conservation Idle Time = {:#010x}\n"
                      " Performance Idle Time = {:#010x}\n"
                      "      Idle Power State = {:#010x}\n\n",
-                     i, mi.drv.desc, mi.drv.version.c_str(), mi.drv.date,
-                     mi.drv.provider_name.c_str(), mi.key.path(),
-                     mi.ps.cons_idle_time, mi.ps.perf_idle_time,
-                     mi.ps.idle_power_state);
+                     mi.description(), mi.ps.cons_idle_time,
+                     mi.ps.perf_idle_time, mi.ps.idle_power_state);
     }
 
     size_t choice;
     for (;;) {
         std::print("Select media instance (0-{}) >> ", mi_size - 1);
         std::string input;
-        if (std::getline(std::cin, input).fail()) {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        } else {
+        if (get_input(input)) {
             const char *last = input.data() + input.size();
             auto [ptr, err] = std::from_chars(input.data(), last, choice);
             if (err == std::errc {} && ptr == last && choice < mi_size) {
@@ -173,8 +202,45 @@ int main() {
         }
     }
 
-    const MediaInfo &selected_mi = media_infos[choice];
-    std::println("Selected #{} {}\n", choice, selected_mi.drv.desc);
+    const MediaInfo &mi = media_infos[choice];
+    static constexpr const std::array update_ps_values =
+        create_update_ps_values();
+    static constexpr const PowerSettings update_ps(update_ps_values);
 
+    std::print("Selected {}\n"
+               "The program is about to update device's power settings to "
+               "the following values:\n"
+               "Conservation Idle Time = {:#010x} -> {:#010x}\n"
+               " Performance Idle Time = {:#010x} -> {:#010x}\n"
+               "      Idle Power State = {:#010x} -> {:#010x}\n\n",
+               mi.description(), mi.ps.cons_idle_time, update_ps.cons_idle_time,
+               mi.ps.perf_idle_time, update_ps.perf_idle_time,
+               mi.ps.idle_power_state, update_ps.idle_power_state);
+
+    bool update;
+    for (;;) {
+        std::print("Do you want to proceed? (y/n) >> ");
+        std::string input;
+        if (get_input(input) && (input == "y" || input == "n")) {
+            update = (input == "y");
+            break;
+        }
+    }
+
+    if (update) {
+        const std::array ps_value_names = PowerSettings::create_value_names();
+        for (size_t i = 0; i < update_ps_values.size(); i++) {
+            const uint32_t &value = update_ps_values[i];
+            const auto write_res = mi.ps_key.write_binary(
+                ps_value_names[i],
+                std::span((uint8_t *) &value, sizeof(value)));
+            if (!write_res.has_value()) {
+                print_error(write_res.error());
+            }
+        }
+        std::println("Settings have been updated");
+    } else {
+        std::println("Aborting");
+    }
     return 0;
 }

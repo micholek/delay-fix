@@ -45,6 +45,16 @@ class Key {
     Result<std::vector<std::string>>
     get_strings(std::span<const std::string> value_names) const;
 
+    Result<void> write_binary(const std::string &value_name,
+                              std::span<const uint8_t> data) const;
+    Result<void> write_subkey_binary(const std::string &subkey_name,
+                                     const std::string &value_name,
+                                     std::span<const uint8_t> data) const;
+    Result<void> write_u32(const std::string &value_name, uint32_t value) const;
+    Result<void> write_subkey_u32(const std::string &subkey_name,
+                                  const std::string &value_name,
+                                  uint32_t value) const;
+
     bool valid() const;
     std::string path() const;
 

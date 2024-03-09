@@ -78,10 +78,11 @@ Key::~Key() {
     }
 }
 
+// TODO: Rewrite to some templated function
 #define RETURN(Winapi_Result, Expected_Value, Error_Message) \
     do {                                                     \
         if ((Winapi_Result) == ERROR_SUCCESS) {              \
-            return (Expected_Value);                         \
+            return Expected_Value;                           \
         }                                                    \
         return std::unexpected(reg::Error {                  \
             .code = (Winapi_Result),                         \
@@ -157,6 +158,34 @@ Key::get_strings(std::span<const std::string> value_names) const {
         values[i] = value_res.value();
     }
     return values;
+}
+
+Result<void> Key::write_binary(const std::string &value_name,
+                               std::span<const uint8_t> data) const {
+    return write_subkey_binary("", value_name, data);
+}
+
+Result<void> Key::write_subkey_binary(const std::string &subkey_name,
+                                      const std::string &value_name,
+                                      std::span<const uint8_t> data) const {
+    LSTATUS res =
+        RegSetKeyValueA((HKEY) k_, subkey_name.c_str(), value_name.c_str(),
+                        REG_BINARY, data.data(), (DWORD) data.size_bytes());
+    RETURN(res, {}, create_msg("Failed to write binary value", value_name));
+}
+
+Result<void> Key::write_u32(const std::string &value_name,
+                            uint32_t value) const {
+    return write_subkey_u32("", value_name, value);
+}
+
+Result<void> Key::write_subkey_u32(const std::string &subkey_name,
+                                   const std::string &value_name,
+                                   uint32_t value) const {
+    LSTATUS res =
+        RegSetKeyValueA((HKEY) k_, subkey_name.c_str(), value_name.c_str(),
+                        REG_DWORD, &value, sizeof(value));
+    RETURN(res, {}, create_msg("Failed to write u32 value", value_name));
 }
 
 bool Key::valid() const {
