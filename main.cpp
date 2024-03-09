@@ -234,8 +234,8 @@ int main() {
             const auto write_res = mi.ps_key.write_binary_value(
                 ps_value_names[i],
                 std::span((uint8_t *) &value, sizeof(value)));
-            if (!write_res.has_value()) {
-                print_error(write_res.error());
+            if (write_res.fail) {
+                print_error(write_res.error);
             }
         }
         std::println("Settings have been updated");

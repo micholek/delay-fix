@@ -36,6 +36,24 @@ std::string create_path(std::string parent_path,
     return parent_path;
 }
 
+reg::WriteResult write_result(LSTATUS winapi_result,
+                              const std::string &error_msg) {
+    if (winapi_result == ERROR_SUCCESS) {
+        return {
+            .fail = false,
+            .error = {},
+        };
+    }
+    return {
+        .fail = true,
+        .error =
+            {
+                .code = winapi_result,
+                .msg = error_msg,
+            },
+    };
+}
+
 } // namespace
 
 namespace reg {
@@ -90,14 +108,14 @@ Key::~Key() {
         });                                                  \
     } while (0)
 
-Result<uint32_t> Key::get_subkeys_count() const {
+ReadResult<uint32_t> Key::get_subkeys_count() const {
     DWORD subkeys_count;
     LSTATUS res = RegQueryInfoKeyA((HKEY) k_, 0, 0, 0, &subkeys_count, 0, 0, 0,
                                    0, 0, 0, 0);
     RETURN(res, subkeys_count, "Failed to get subkeys count");
 }
 
-Result<std::string> Key::enum_subkey_names(uint32_t index) const {
+ReadResult<std::string> Key::enum_subkey_names(uint32_t index) const {
     char subkey_name[64];
     DWORD size = sizeof(subkey_name);
     LSTATUS res =
@@ -107,7 +125,7 @@ Result<std::string> Key::enum_subkey_names(uint32_t index) const {
                       std::to_string(index)));
 }
 
-Result<uint32_t> Key::read_u32_value(std::string value_name) const {
+ReadResult<uint32_t> Key::read_u32_value(std::string value_name) const {
     uint32_t value;
     DWORD size = sizeof(value);
     LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_DWORD,
@@ -115,7 +133,7 @@ Result<uint32_t> Key::read_u32_value(std::string value_name) const {
     RETURN(res, value, create_msg("Failed to get u32 value", value_name));
 }
 
-Result<std::vector<uint32_t>>
+ReadResult<std::vector<uint32_t>>
 Key::read_u32_values(std::span<const std::string> value_names) const {
     std::vector<uint32_t> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
@@ -133,7 +151,7 @@ Key::read_u32_values(std::span<const std::string> value_names) const {
     return values;
 }
 
-Result<std::string> Key::read_string_value(std::string value_name) const {
+ReadResult<std::string> Key::read_string_value(std::string value_name) const {
     char value[64];
     DWORD size = sizeof(value);
     LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_REG_SZ,
@@ -142,7 +160,7 @@ Result<std::string> Key::read_string_value(std::string value_name) const {
            create_msg("Failed to get string value", value_name));
 }
 
-Result<std::vector<std::string>>
+ReadResult<std::vector<std::string>>
 Key::read_string_values(std::span<const std::string> value_names) const {
     std::vector<std::string> values(value_names.size());
     for (size_t i = 0; i < values.size(); i++) {
@@ -160,33 +178,35 @@ Key::read_string_values(std::span<const std::string> value_names) const {
     return values;
 }
 
-Result<void> Key::write_binary_value(const std::string &value_name,
-                                     std::span<const uint8_t> data) const {
+WriteResult Key::write_binary_value(const std::string &value_name,
+                                    std::span<const uint8_t> data) const {
     return write_subkey_binary_value("", value_name, data);
 }
 
-Result<void>
+WriteResult
 Key::write_subkey_binary_value(const std::string &subkey_name,
                                const std::string &value_name,
                                std::span<const uint8_t> data) const {
     LSTATUS res =
         RegSetKeyValueA((HKEY) k_, subkey_name.c_str(), value_name.c_str(),
                         REG_BINARY, data.data(), (DWORD) data.size_bytes());
-    RETURN(res, {}, create_msg("Failed to write binary value", value_name));
+    return write_result(res,
+                        create_msg("Failed to write binary value", value_name));
 }
 
-Result<void> Key::write_u32_value(const std::string &value_name,
-                                  uint32_t value) const {
+WriteResult Key::write_u32_value(const std::string &value_name,
+                                 uint32_t value) const {
     return write_subkey_u32_value("", value_name, value);
 }
 
-Result<void> Key::write_subkey_u32_value(const std::string &subkey_name,
-                                         const std::string &value_name,
-                                         uint32_t value) const {
+WriteResult Key::write_subkey_u32_value(const std::string &subkey_name,
+                                        const std::string &value_name,
+                                        uint32_t value) const {
     LSTATUS res =
         RegSetKeyValueA((HKEY) k_, subkey_name.c_str(), value_name.c_str(),
                         REG_DWORD, &value, sizeof(value));
-    RETURN(res, {}, create_msg("Failed to write u32 value", value_name));
+    return write_result(res,
+                        create_msg("Failed to write binary value", value_name));
 }
 
 bool Key::valid() const {
