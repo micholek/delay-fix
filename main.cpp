@@ -148,7 +148,7 @@ int main() {
         }
 
         const std::array ps_value_names = PowerSettings::create_value_names();
-        const auto ps_values_res = psk.get_u32s(ps_value_names);
+        const auto ps_values_res = psk.read_u32_values(ps_value_names);
         if (!ps_values_res.has_value()) {
             print_error(ps_values_res.error());
             continue;
@@ -156,7 +156,7 @@ int main() {
         const std::vector<uint32_t> ps_values = ps_values_res.value();
 
         const std::array drv_value_names = Driver::create_value_names();
-        const auto drv_values_res = msk.get_strings(drv_value_names);
+        const auto drv_values_res = msk.read_string_values(drv_value_names);
         if (!drv_values_res.has_value()) {
             print_error(drv_values_res.error());
             continue;
@@ -231,7 +231,7 @@ int main() {
         const std::array ps_value_names = PowerSettings::create_value_names();
         for (size_t i = 0; i < update_ps_values.size(); i++) {
             const uint32_t &value = update_ps_values[i];
-            const auto write_res = mi.ps_key.write_binary(
+            const auto write_res = mi.ps_key.write_binary_value(
                 ps_value_names[i],
                 std::span((uint8_t *) &value, sizeof(value)));
             if (!write_res.has_value()) {

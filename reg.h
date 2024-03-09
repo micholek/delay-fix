@@ -38,22 +38,23 @@ class Key {
 
     Result<uint32_t> get_subkeys_count() const;
     Result<std::string> enum_subkey_names(uint32_t idx) const;
-    Result<uint32_t> get_u32(std::string value_name) const;
+    Result<uint32_t> read_u32_value(std::string value_name) const;
     Result<std::vector<uint32_t>>
-    get_u32s(std::span<const std::string> value_names) const;
-    Result<std::string> get_string(std::string value_name) const;
+    read_u32_values(std::span<const std::string> value_names) const;
+    Result<std::string> read_string_value(std::string value_name) const;
     Result<std::vector<std::string>>
-    get_strings(std::span<const std::string> value_names) const;
+    read_string_values(std::span<const std::string> value_names) const;
 
-    Result<void> write_binary(const std::string &value_name,
-                              std::span<const uint8_t> data) const;
-    Result<void> write_subkey_binary(const std::string &subkey_name,
-                                     const std::string &value_name,
-                                     std::span<const uint8_t> data) const;
-    Result<void> write_u32(const std::string &value_name, uint32_t value) const;
-    Result<void> write_subkey_u32(const std::string &subkey_name,
-                                  const std::string &value_name,
-                                  uint32_t value) const;
+    Result<void> write_binary_value(const std::string &value_name,
+                                    std::span<const uint8_t> data) const;
+    Result<void> write_subkey_binary_value(const std::string &subkey_name,
+                                           const std::string &value_name,
+                                           std::span<const uint8_t> data) const;
+    Result<void> write_u32_value(const std::string &value_name,
+                                 uint32_t value) const;
+    Result<void> write_subkey_u32_value(const std::string &subkey_name,
+                                        const std::string &value_name,
+                                        uint32_t value) const;
 
     bool valid() const;
     std::string path() const;
