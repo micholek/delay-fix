@@ -36,6 +36,19 @@ std::string create_path(std::string parent_path,
     return parent_path;
 }
 
+template <typename T>
+reg::ReadResult<T> read_result(LSTATUS winapi_result, T expected_value,
+                               const std::string &error_message) {
+    if (winapi_result == ERROR_SUCCESS) {
+        return expected_value;
+    } else {
+        return std::unexpected(reg::Error {
+            .code = winapi_result,
+            .msg = error_message,
+        });
+    }
+}
+
 reg::WriteResult write_result(LSTATUS winapi_result,
                               const std::string &error_msg) {
     if (winapi_result == ERROR_SUCCESS) {
@@ -96,23 +109,12 @@ Key::~Key() {
     }
 }
 
-// TODO: Rewrite to some templated function
-#define RETURN(Winapi_Result, Expected_Value, Error_Message) \
-    do {                                                     \
-        if ((Winapi_Result) == ERROR_SUCCESS) {              \
-            return Expected_Value;                           \
-        }                                                    \
-        return std::unexpected(reg::Error {                  \
-            .code = (Winapi_Result),                         \
-            .msg = (Error_Message),                          \
-        });                                                  \
-    } while (0)
-
 ReadResult<uint32_t> Key::get_subkeys_count() const {
-    DWORD subkeys_count;
-    LSTATUS res = RegQueryInfoKeyA((HKEY) k_, 0, 0, 0, &subkeys_count, 0, 0, 0,
-                                   0, 0, 0, 0);
-    RETURN(res, subkeys_count, "Failed to get subkeys count");
+    uint32_t subkeys_count;
+    LSTATUS res = RegQueryInfoKeyA((HKEY) k_, 0, 0, 0, (DWORD *) &subkeys_count,
+                                   0, 0, 0, 0, 0, 0, 0);
+    return read_result<uint32_t>(res, subkeys_count,
+                                 "Failed to get subkeys count");
 }
 
 ReadResult<std::string> Key::enum_subkey_names(uint32_t index) const {
@@ -120,9 +122,10 @@ ReadResult<std::string> Key::enum_subkey_names(uint32_t index) const {
     DWORD size = sizeof(subkey_name);
     LSTATUS res =
         RegEnumKeyExA((HKEY) k_, index, subkey_name, &size, 0, 0, 0, 0);
-    RETURN(res, std::string {subkey_name},
-           create_msg("Failed to get subkey name with index",
-                      std::to_string(index)));
+    return read_result<std::string>(
+        res, subkey_name,
+        create_msg("Failed to get subkey name with index",
+                   std::to_string(index)));
 }
 
 ReadResult<uint32_t> Key::read_u32_value(std::string value_name) const {
@@ -130,7 +133,8 @@ ReadResult<uint32_t> Key::read_u32_value(std::string value_name) const {
     DWORD size = sizeof(value);
     LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_DWORD,
                                0, &value, &size);
-    RETURN(res, value, create_msg("Failed to get u32 value", value_name));
+    return read_result<uint32_t>(
+        res, value, create_msg("Failed to get u32 value", value_name));
 }
 
 ReadResult<std::vector<uint32_t>>
@@ -156,8 +160,8 @@ ReadResult<std::string> Key::read_string_value(std::string value_name) const {
     DWORD size = sizeof(value);
     LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_REG_SZ,
                                0, value, &size);
-    RETURN(res, std::string {value},
-           create_msg("Failed to get string value", value_name));
+    return read_result<std::string>(
+        res, value, create_msg("Failed to get string value", value_name));
 }
 
 ReadResult<std::vector<std::string>>
