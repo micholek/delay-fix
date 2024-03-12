@@ -4,4 +4,4 @@ all:
 
 .PHONY: clean
 clean:
-	rm output/*
+	del /q output\*
