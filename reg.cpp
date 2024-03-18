@@ -81,6 +81,8 @@ Key::Key(const Key &k, const std::string &subkey_name)
     if (!system_) {
         RegOpenKeyExA((HKEY) k.k_, subkey_name.c_str(), 0, KEY_READ | KEY_WRITE,
                       (HKEY *) &k_);
+    } else {
+        k_ = k.k_;
     }
 }
 
