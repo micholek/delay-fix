@@ -120,6 +120,7 @@ ReadResult<uint32_t> Key::get_subkeys_count() const {
 }
 
 ReadResult<std::string> Key::enum_subkey_names(uint32_t index) const {
+    // TODO: Handle too small buffer
     char subkey_name[64];
     DWORD size = sizeof(subkey_name);
     LSTATUS res =
@@ -158,6 +159,7 @@ Key::read_u32_values(std::span<const std::string> value_names) const {
 }
 
 ReadResult<std::string> Key::read_string_value(std::string value_name) const {
+    // TODO: Handle too small buffer
     char value[64];
     DWORD size = sizeof(value);
     LSTATUS res = RegGetValueA((HKEY) k_, 0, value_name.c_str(), RRF_RT_REG_SZ,
