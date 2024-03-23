@@ -194,9 +194,11 @@ int main() {
         std::print("Select media instance (0-{}) >> ", mi_size - 1);
         std::string input;
         if (get_input(input)) {
-            const char *last = input.data() + input.size();
-            auto [ptr, err] = std::from_chars(input.data(), last, choice);
-            if (err == std::errc {} && ptr == last && choice < mi_size) {
+            const char *input_end = input.data() + input.size();
+            const auto [conv_end, err] =
+                std::from_chars(input.data(), input_end, choice);
+            if (err == std::errc {} && conv_end == input_end &&
+                choice < mi_size) {
                 break;
             }
         }
