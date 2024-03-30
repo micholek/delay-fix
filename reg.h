@@ -65,7 +65,7 @@ class Key {
     std::string path() const;
 
   private:
-    uintptr_t k_;
+    uint64_t k_;
     bool system_;
     std::string path_;
 };

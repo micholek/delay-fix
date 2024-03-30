@@ -12,7 +12,7 @@ constexpr std::string system_key_to_path(reg::SystemKey sk) {
     return "HKEY_LOCAL_MACHINE"; // fallback for now
 }
 
-constexpr uintptr_t system_key_to_key_ptr(reg::SystemKey sk) {
+constexpr uint64_t system_key_to_key_handle(reg::SystemKey sk) {
     HKEY k;
     switch (sk) {
     case reg::SystemKey::LocalMachine:
@@ -21,7 +21,7 @@ constexpr uintptr_t system_key_to_key_ptr(reg::SystemKey sk) {
     default:
         k = HKEY_LOCAL_MACHINE; // fallback for now
     }
-    return (uintptr_t) k;
+    return (uint64_t) k;
 }
 
 std::string create_msg(std::string desc, std::string param) {
@@ -67,16 +67,18 @@ reg::WriteResult write_result(LSTATUS winapi_result,
     };
 }
 
+const uint64_t InvalidHandle = 0;
+
 } // namespace
 
 namespace reg {
 
 Key::Key(SystemKey sk)
-    : k_ {system_key_to_key_ptr(sk)}, system_ {true},
+    : k_ {system_key_to_key_handle(sk)}, system_ {true},
       path_ {system_key_to_path(sk)} {}
 
 Key::Key(const Key &k, const std::string &subkey_name)
-    : k_ {(uintptr_t) nullptr}, system_ {k.system_ && subkey_name.empty()},
+    : k_ {InvalidHandle}, system_ {k.system_ && subkey_name.empty()},
       path_ {create_path(k.path_, subkey_name)} {
     if (!system_) {
         RegOpenKeyExA((HKEY) k.k_, subkey_name.c_str(), 0, KEY_READ | KEY_WRITE,
@@ -88,7 +90,7 @@ Key::Key(const Key &k, const std::string &subkey_name)
 
 Key::Key(Key &&other)
     : k_ {other.k_}, system_ {other.system_}, path_ {std::move(other.path_)} {
-    other.k_ = (uintptr_t) nullptr;
+    other.k_ = InvalidHandle;
 }
 
 Key &Key::operator=(Key &&other) {
@@ -99,7 +101,7 @@ Key &Key::operator=(Key &&other) {
         k_ = other.k_;
         system_ = other.system_;
         path_ = std::move(other.path_);
-        other.k_ = (uintptr_t) nullptr;
+        other.k_ = InvalidHandle;
     }
     return *this;
 }
@@ -107,7 +109,7 @@ Key &Key::operator=(Key &&other) {
 Key::~Key() {
     if (!system_ && valid()) {
         RegCloseKey((HKEY) k_);
-        k_ = (uintptr_t) nullptr;
+        k_ = InvalidHandle;
     }
 }
 
@@ -218,7 +220,7 @@ WriteResult Key::write_subkey_u32_value(const std::string &subkey_name,
 }
 
 bool Key::valid() const {
-    return k_ != (uintptr_t) nullptr;
+    return k_ != InvalidHandle;
 }
 
 std::string Key::path() const {
