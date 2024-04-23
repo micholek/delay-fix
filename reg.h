@@ -62,6 +62,7 @@ class Key {
                                        uint32_t value) const;
 
     bool valid() const;
+    bool system() const;
     std::string path() const;
 
   private:

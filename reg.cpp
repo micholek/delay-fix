@@ -223,6 +223,10 @@ bool Key::valid() const {
     return k_ != InvalidHandle;
 }
 
+bool Key::system() const {
+    return system_;
+}
+
 std::string Key::path() const {
     return path_;
 }
