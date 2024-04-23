@@ -143,7 +143,7 @@ int main() {
 
         reg::Key psk(msk, "PowerSettings");
         if (!psk.valid()) {
-            std::println(stderr, "Could not open a key '{}'", msk.path());
+            std::println(stderr, "Could not open a key '{}'", psk.path());
             continue;
         }
 
